@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Niche Prompt Library — SaaS Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede6;
+    --ink: #1a1814;
+    --muted: #7a7668;
+    --accent: #d4521a;
+    --accent2: #2a5c8a;
+    --card: #e8e4db;
+    --border: #ccc8be;
+    --tag-bg: #1a1814;
+    --tag-text: #f0ede6;
+    --copy-bg: #d4521a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.4;
+  }
+
+  header {
+    padding: 56px 40px 40px;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .header-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(32px, 6vw, 64px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Filter tabs */
+  .filters {
+    padding: 24px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-right: 8px;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  /* Grid */
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: default;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0 var(--ink);
+    z-index: 1;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .card-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+  }
+
+  .tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .tag-saas { background: #2a5c8a22; color: #2a5c8a; border: 1px solid #2a5c8a44; }
+  .tag-research { background: #1a7a4422; color: #1a7a44; border: 1px solid #1a7a4444; }
+  .tag-validate { background: #d4521a22; color: #d4521a; border: 1px solid #d4521a44; }
+  .tag-advanced { background: #7a1a7a22; color: #7a1a7a; border: 1px solid #7a1a7a44; }
+  .tag-quick { background: #1a1a7a22; color: #1a1a7a; border: 1px solid #1a1a7a44; }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .card-desc {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .prompt-box {
+    background: var(--ink);
+    color: #c8f0d8;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 16px;
+    border-radius: 2px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 180px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: #444 #1a1814;
+  }
+
+  .prompt-box .placeholder {
+    color: #d4a574;
+    font-style: italic;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .source-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .copy-btn {
+    padding: 8px 18px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .copy-btn:hover {
+    background: var(--ink);
+  }
+
+  .copy-btn.copied {
+    background: #1a7a44;
+  }
+
+  /* Section divider */
+  .section-header {
+    max-width: 1100px;
+    margin: 32px auto 0;
+    padding: 16px 40px;
+    border-top: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* SITES section */
+  .sites-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px 60px;
+  }
+
+  .sites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 2px;
+    margin-top: 16px;
+  }
+
+  .site-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all 0.15s;
+  }
+
+  .site-card:hover {
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .site-name {
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .site-url {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    text-decoration: none;
+  }
+
+  .site-url:hover { text-decoration: underline; }
+
+  .site-note {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .free-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    background: #1a7a4422;
+    color: #1a7a44;
+    border: 1px solid #1a7a4444;
+    border-radius: 2px;
+    margin-left: 6px;
+  }
+
+  .paid-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    background: #d4521a22;
+    color: #d4521a;
+    border: 1px solid #d4521a44;
+    border-radius: 2px;
+    margin-left: 6px;
+  }
+
+  @media (max-width: 600px) {
+    header, .filters, .grid, .section-header, .sites-section { padding-left: 20px; padding-right: 20px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-eyebrow">// prompt_library.v1.0 — SaaS Niche Edition</div>
+  <h1>Niche Finder<br>Prompt Library</h1>
+  <p class="header-sub">Колекция от безплатни AI prompts за намиране на бизнес ниши, SaaS идеи и валидиране на пазари. Copy → paste → резултати.</p>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-num">15</span><span class="stat-label">Prompts</span></div>
+    <div class="stat"><span class="stat-num">5</span><span class="stat-label">Категории</span></div>
+    <div class="stat"><span class="stat-num">100%</span><span class="stat-label">Безплатни</span></div>
+    <div class="stat"><span class="stat-num">8</span><span class="stat-label">Сайта с ресурси</span></div>
+  </div>
+</header>
+
+<div class="filters">
+  <span class="filter-label">Филтър:</span>
+  <button class="filter-btn active" onclick="filterCards('all', this)">Всички</button>
+  <button class="filter-btn" onclick="filterCards('saas', this)">SaaS</button>
+  <button class="filter-btn" onclick="filterCards('research', this)">Пазарно проучване</button>
+  <button class="filter-btn" onclick="filterCards('validate', this)">Валидиране</button>
+  <button class="filter-btn" onclick="filterCards('advanced', this)">Напреднали</button>
+  <button class="filter-btn" onclick="filterCards('quick', this)">Бързи</button>
+</div>
+
+<div class="grid" id="grid">
+
+  <!-- CARD 1 -->
+  <div class="card" data-tags="saas quick">
+    <div class="card-top">
+      <span class="card-num">#01</span>
+      <div class="tags"><span class="tag tag-saas">SaaS</span><span class="tag tag-quick">Бързо</span></div>
+    </div>
+    <div class="card-title">SaaS Niche Brainstorm — Базов</div>
+    <div class="card-desc">Генерира 10 SaaS идеи на база умения и интереси. Идеален стартов prompt.</div>
+    <div class="prompt-box">Act as a senior SaaS business analyst. I'm an experienced developer with [X years] in [tech stack]. 
+
+Give me 10 specific, underserved SaaS niche ideas that:
+- Solve a clear B2B pain point
+- Can be built by 1 developer in under 8 weeks
+- Have MRR potential of $5K-$50K
+- Have low competition in Eastern Europe
+
+For each idea provide:
+1. Problem statement (1 sentence)
+2. Target customer (specific role/industry)
+3. Price point ($/month)
+4. MVP feature set (3 features max)
+5. Biggest risk</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT / Gemini</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 2 -->
+  <div class="card" data-tags="saas research">
+    <div class="card-top">
+      <span class="card-num">#02</span>
+      <div class="tags"><span class="tag tag-saas">SaaS</span><span class="tag tag-research">Проучване</span></div>
+    </div>
+    <div class="card-title">Pain Point Mining — Reddit & Forums</div>
+    <div class="card-desc">Симулира анализ на Reddit жалби, за да намери реални болезнени точки.</div>
+    <div class="prompt-box">You are a market researcher specializing in finding SaaS opportunities from online complaints.
+
+Analyze common pain points that professionals in [industry: e.g. accounting, real estate, construction] frequently complain about on Reddit, LinkedIn, and industry forums.
+
+For each pain point:
+- Quote a realistic complaint (what they actually say)
+- Rate urgency (1-10)
+- Rate willingness to pay (1-10)
+- Existing solutions and their failures
+- SaaS opportunity that could solve it
+- Estimated monthly budget this persona has for software
+
+Focus on problems where existing software is "too expensive", "too complex", or "doesn't exist in our language/market".</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 3 -->
+  <div class="card" data-tags="validate quick">
+    <div class="card-top">
+      <span class="card-num">#03</span>
+      <div class="tags"><span class="tag tag-validate">Валидиране</span><span class="tag tag-quick">Бързо</span></div>
+    </div>
+    <div class="card-title">5-минутен SaaS Validator</div>
+    <div class="card-desc">Дай идея → получи честна оценка дали си струва да строиш.</div>
+    <div class="prompt-box">You are a brutally honest SaaS advisor who has seen 1000+ startup ideas fail and succeed.
+
+Evaluate this SaaS idea: [describe your idea in 2-3 sentences]
+
+Score it on:
+1. MARKET SIZE: TAM estimate with reasoning
+2. PAIN SEVERITY: Is this a painkiller or vitamin? (1-10)
+3. COMPETITION: Who exists, what's the gap?
+4. TIMING: Why now? Why not 3 years ago?
+5. SOLO FOUNDER REALITY: Can 1 dev build MVP in 6 weeks? 
+6. PATH TO $5K MRR: How many customers, what sales channel?
+
+End with: VERDICT (Build it / Test it first / Avoid) and the single biggest reason for your verdict.
+
+Be ruthless. Don't sugarcoat.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 4 -->
+  <div class="card" data-tags="research saas">
+    <div class="card-top">
+      <span class="card-num">#04</span>
+      <div class="tags"><span class="tag tag-research">Проучване</span><span class="tag tag-saas">SaaS</span></div>
+    </div>
+    <div class="card-title">Micro-Niche Expander</div>
+    <div class="card-desc">Взима широка ниша и я разбива на конкретни под-ниши с по-малко конкуренция.</div>
+    <div class="prompt-box">Take the broad niche: [e.g. "project management software"]
+
+Break it down into 15 specific micro-niches that are:
+- Underserved (existing tools don't focus on them)
+- Have a clear, specific user persona
+- Large enough to support a $10K MRR SaaS
+
+For each micro-niche provide:
+- Niche name (specific)
+- Persona: "A [job title] at a [company type] who needs to [specific workflow]"
+- Why generic tools fail them
+- 1 feature that would make them switch immediately
+- Price they'd pay per month
+- How to find the first 10 customers
+
+Sort by easiest to hardest to reach customers.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 5 -->
+  <div class="card" data-tags="advanced saas">
+    <div class="card-top">
+      <span class="card-num">#05</span>
+      <div class="tags"><span class="tag tag-advanced">Напреднал</span><span class="tag tag-saas">SaaS</span></div>
+    </div>
+    <div class="card-title">Jobs-To-Be-Done Niche Finder</div>
+    <div class="card-desc">Използва JTBD framework за намиране на ниши с висока готовност за плащане.</div>
+    <div class="prompt-box">Apply the Jobs-To-Be-Done (JTBD) framework to find SaaS opportunities in [industry].
+
+For this industry, identify 8 "jobs" people are trying to get done where:
+- The current solution is manual, spreadsheet-based, or duct-taped together
+- The person doing the job is measured/evaluated on the outcome
+- A failed job has financial consequences (not just inconvenience)
+
+For each job:
+FUNCTIONAL JOB: What are they literally trying to accomplish?
+EMOTIONAL JOB: How do they want to feel while doing it?
+SOCIAL JOB: How do they want to be perceived?
+CURRENT WORKAROUND: How are they doing it now (be specific)?
+FAILURE MODES: What goes wrong with the current approach?
+SAAS OPPORTUNITY: 1-sentence product description
+BUYER vs USER: Who pays vs who uses it?
+BUDGET SIGNAL: What do they already spend money on that's adjacent?</div>
+    <div class="card-footer">
+      <span class="source-label">Claude (best) / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 6 -->
+  <div class="card" data-tags="validate research">
+    <div class="card-top">
+      <span class="card-num">#06</span>
+      <div class="tags"><span class="tag tag-validate">Валидиране</span><span class="tag tag-research">Проучване</span></div>
+    </div>
+    <div class="card-title">Competitor Gap Analyzer</div>
+    <div class="card-desc">Анализира конкурентите в ниша и открива дупките в пазара.</div>
+    <div class="prompt-box">I'm researching the competitive landscape for [niche: e.g. "invoice automation for small businesses"].
+
+Analyze the top 5-8 existing solutions in this space. For each:
+- Name, pricing, target customer
+- Their #1 marketing message (what they promise)
+- Most common customer complaints (what they fail at)
+- Who they DON'T serve well
+
+Then synthesize:
+1. THE GAP: What customer profile is underserved by ALL of them?
+2. THE WEDGE: What's the one feature/promise that no one owns?
+3. THE POSITION: Write a positioning statement for a new entrant that avoids all their weaknesses
+4. BEACHHEAD CUSTOMER: Describe the ideal first 10 customers in 1 paragraph
+
+Format the competitive analysis as a table.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 7 -->
+  <div class="card" data-tags="quick saas">
+    <div class="card-top">
+      <span class="card-num">#07</span>
+      <div class="tags"><span class="tag tag-quick">Бързо</span><span class="tag tag-saas">SaaS</span></div>
+    </div>
+    <div class="card-title">The "Boring SaaS" Finder</div>
+    <div class="card-desc">Търси скучни, незабележими ниши с висок retention и малко конкуренция.</div>
+    <div class="prompt-box">Find me 10 "boring" SaaS opportunities — meaning:
+- Nobody writes blog posts about them
+- No VC would fund them
+- But small businesses PAY for them every month without thinking twice
+
+Criteria:
+✓ Solves a recurring operational headache (not a one-time problem)
+✓ Can charge $50-300/month per customer
+✓ Low churn because switching is painful
+✓ Can be built without AI/blockchain/fancy tech
+✓ Target customer: 5-50 person companies
+
+For each: 
+- What does it do (plain English, 1 sentence)
+- Why do customers never cancel
+- Existing market size signal (e.g. "Google Sheets template for X has 50K downloads")
+- Why a solo dev can win against existing solutions</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 8 -->
+  <div class="card" data-tags="research advanced">
+    <div class="card-top">
+      <span class="card-num">#08</span>
+      <div class="tags"><span class="tag tag-research">Проучване</span><span class="tag tag-advanced">Напреднал</span></div>
+    </div>
+    <div class="card-title">Industry Workflow Mapper</div>
+    <div class="card-desc">Маpва целия workflow на дадена индустрия и открива стъпките без добри инструменти.</div>
+    <div class="prompt-box">Map the complete operational workflow of a [specific business type: e.g. "dental clinic", "small construction company", "independent bookkeeper"].
+
+List every major task/process they do in a week:
+
+For each task:
+- Task name
+- How it's currently done (tool/method)
+- Time spent per week
+- Error rate / pain level (1-10)  
+- Cost of errors or inefficiency
+- Existing software solutions (if any)
+- Software gap: None / Partial / Good coverage
+
+Then highlight the TOP 3 tasks with HIGH pain + LOW software coverage.
+
+For each of those 3, describe a SaaS MVP that would solve it:
+- Core feature (must-have only)
+- How to charge for it
+- How to find your first customer this week</div>
+    <div class="card-footer">
+      <span class="source-label">Claude (best)</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 9 -->
+  <div class="card" data-tags="validate quick">
+    <div class="card-top">
+      <span class="card-num">#09</span>
+      <div class="tags"><span class="tag tag-validate">Валидиране</span><span class="tag tag-quick">Бързо</span></div>
+    </div>
+    <div class="card-title">Landing Page Copy Generator</div>
+    <div class="card-desc">Генерира landing page copy за да тестваш нишата преди да строиш продукта.</div>
+    <div class="prompt-box">Write a landing page for a SaaS product to test market demand BEFORE building it.
+
+Product idea: [describe in 1-2 sentences]
+Target customer: [specific persona]
+Main pain it solves: [the problem]
+
+Generate:
+
+HEADLINE (under 10 words, outcome-focused, no buzzwords)
+SUBHEADLINE (1 sentence expanding the promise)
+3 BULLET POINTS (specific outcomes, not features)
+SOCIAL PROOF placeholder (what testimonial would make them sign up?)
+CTA BUTTON TEXT (not "Sign Up" — something specific)
+FAQ (3 questions that kill objections)
+
+Then write a 280-character Twitter post to drive traffic to this page.
+
+Goal: make a developer look like a team, and a beta product look credible.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 10 -->
+  <div class="card" data-tags="advanced research">
+    <div class="card-top">
+      <span class="card-num">#10</span>
+      <div class="tags"><span class="tag tag-advanced">Напреднал</span><span class="tag tag-research">Проучване</span></div>
+    </div>
+    <div class="card-title">Eastern Europe SaaS Whitespace</div>
+    <div class="card-desc">Специализиран за BG/CEE пазара — търси ниши слабо обслужени в региона.</div>
+    <div class="prompt-box">Analyze SaaS market gaps specific to Bulgaria, Romania, Poland, and the CEE region.
+
+Consider:
+- Regulation differences (ЦАИС, local VAT rules, labor law)
+- Language barriers (most US SaaS is English-only)
+- Price sensitivity (users pay 30-50% less than Western Europe)
+- Industries with high SME density in the region (construction, retail, accounting, tourism)
+
+Find 8 SaaS opportunities where:
+1. A US/Western product exists but is too expensive or not localized
+2. A local regulation creates a unique workflow not covered by global tools
+3. A specific industry is huge in CEE but ignored by global SaaS
+
+For each:
+- Niche and why it's CEE-specific
+- Competitor in Western market + why it fails locally
+- Local regulatory or language angle
+- Realistic price point for Bulgarian/Romanian market
+- How to use the local market as a launch pad before going global</div>
+    <div class="card-footer">
+      <span class="source-label">Claude (best)</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 11 -->
+  <div class="card" data-tags="saas validate">
+    <div class="card-top">
+      <span class="card-num">#11</span>
+      <div class="tags"><span class="tag tag-saas">SaaS</span><span class="tag tag-validate">Валидиране</span></div>
+    </div>
+    <div class="card-title">The "Steal This Idea" Prompt</div>
+    <div class="card-desc">Открива SaaS продукти с малко клиенти но висок MRR в специфични вертикали.</div>
+    <div class="prompt-box">I want to find SaaS products that are small but profitable — the type that has 200 customers and makes $50K MRR, flies under the radar, and nobody writes about.
+
+For the vertical [industry], list examples of:
+1. Niche software tools that probably exist but aren't famous
+2. Workflows that ONLY that industry has (their secret language and processes)
+3. Integrations nobody has built yet (e.g. [industry software] + [common tool])
+4. "We use Excel for this" tasks that happen at scale
+
+For each opportunity, estimate:
+- Number of businesses in Europe that would need this
+- Average revenue per customer
+- Realistic MRR ceiling for a niche tool
+- Barrier to entry (low/medium/high) and why
+
+End with: rank all opportunities by (Revenue potential × Low competition) score.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 12 -->
+  <div class="card" data-tags="quick validate">
+    <div class="card-top">
+      <span class="card-num">#12</span>
+      <div class="tags"><span class="tag tag-quick">Бързо</span><span class="tag tag-validate">Валидиране</span></div>
+    </div>
+    <div class="card-title">Customer Interview Script Generator</div>
+    <div class="card-desc">Генерира въпроси за 20-минутен customer discovery interview за дадена ниша.</div>
+    <div class="prompt-box">Create a 20-minute customer discovery interview script for validating a SaaS idea.
+
+My idea: [describe in 1-2 sentences]
+Target persona: [job title, company size, industry]
+
+The script should:
+- Start with rapport-building questions (no pitching)
+- Explore their current workflow in detail (how exactly do they do X today?)
+- Uncover emotional pain (what's frustrating, what keeps them up at night)
+- Test willingness to pay WITHOUT asking "would you pay for this?"
+- End with a referral request
+
+Include:
+- 15 specific questions in order
+- Follow-up probes for each key question
+- RED FLAGS to listen for (signals they won't actually pay)
+- GREEN FLAGS (signals they're a real customer)
+- How to transition from interview to asking them to be a beta user
+
+Format as a script I can use in a real call.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 13 -->
+  <div class="card" data-tags="advanced saas">
+    <div class="card-top">
+      <span class="card-num">#13</span>
+      <div class="tags"><span class="tag tag-advanced">Напреднал</span><span class="tag tag-saas">SaaS</span></div>
+    </div>
+    <div class="card-title">Trend → SaaS Opportunity Mapper</div>
+    <div class="card-desc">Взима текущ macro trend и го превръща в конкретни SaaS идеи.</div>
+    <div class="prompt-box">Take this macro trend: [e.g. "AI regulation in EU", "remote work normalization", "aging workforce", "energy costs in Europe"]
+
+Map it to specific SaaS opportunities using this framework:
+
+FIRST ORDER EFFECTS: What directly changes for businesses because of this trend?
+SECOND ORDER EFFECTS: What new problems arise from those changes?
+THIRD ORDER EFFECTS: What infrastructure/tooling will be needed in 3-5 years?
+
+For each level, identify 3 SaaS ideas that capitalize on the trend being at [early/peak/mature] stage.
+
+For each idea:
+- Why this trend specifically creates demand NOW
+- Customer who is most immediately affected
+- What they're doing today (and why it's breaking)
+- The SaaS that catches the wave
+
+Avoid obvious ideas. Focus on the non-obvious second and third order plays.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude (best)</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 14 -->
+  <div class="card" data-tags="research quick">
+    <div class="card-top">
+      <span class="card-num">#14</span>
+      <div class="tags"><span class="tag tag-research">Проучване</span><span class="tag tag-quick">Бързо</span></div>
+    </div>
+    <div class="card-title">Pricing Research Prompt</div>
+    <div class="card-desc">Открива правилния ценови модел и price point за дадена SaaS ниша.</div>
+    <div class="prompt-box">Help me determine the right pricing strategy for a SaaS in the [niche] market.
+
+Research the following for this niche:
+1. What do customers currently pay for adjacent tools?
+2. What's the ROI they get (time saved, errors avoided, revenue gained)?
+3. What pricing model do they prefer (flat/per-seat/usage)?
+4. What's the psychological price ceiling (where they stop and ask their boss)?
+5. What's the "no-brainer" price point (they sign up without needing approval)?
+
+Then recommend:
+- LAUNCH PRICE (low enough to get first 10 customers fast)
+- GROWTH PRICE (maximizes MRR per customer)  
+- ENTERPRISE PRICE (for when they ask "do you have a bigger plan?")
+- Pricing page structure (how many tiers, what to include in each)
+- ONE pricing trick used by successful SaaS in adjacent niches
+
+Base your analysis on real pricing psychology, not guesses.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude / ChatGPT</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+  <!-- CARD 15 -->
+  <div class="card" data-tags="advanced validate">
+    <div class="card-top">
+      <span class="card-num">#15</span>
+      <div class="tags"><span class="tag tag-advanced">Напреднал</span><span class="tag tag-validate">Валидиране</span></div>
+    </div>
+    <div class="card-title">Full Go/No-Go Decision Framework</div>
+    <div class="card-desc">Цялостен framework за вземане на решение — строя ли или не?</div>
+    <div class="prompt-box">You are a SaaS investor and operator who has built and exited 3 companies. Give me a structured GO / NO-GO decision on this idea.
+
+IDEA: [describe your idea]
+MY BACKGROUND: [your skills, available time, budget]
+TARGET MARKET: [geography, industry, company size]
+
+Evaluate across 7 dimensions (score 1-5 each):
+
+1. HAIR ON FIRE: How urgently do customers need this? Evidence?
+2. MARKET SIZE: How many paying customers exist in target geo?
+3. WILLINGNESS TO PAY: What proof exists they pay for adjacent tools?
+4. FOUNDER-MARKET FIT: Why are YOU the right person to build this?
+5. BUILD FEASIBILITY: Can you ship v1 in 6 weeks, solo?
+6. DISTRIBUTION: How do you reach the first 100 customers?
+7. DEFENSIBILITY: In 2 years, why won't a big player kill you?
+
+SCORING:
+- 28-35: Build it immediately
+- 20-27: Build after validating #1 weakness
+- 12-19: Test the riskiest assumption first, don't build yet  
+- Below 12: Kill it
+
+Give me total score + the one thing I must prove before writing a line of code.</div>
+    <div class="card-footer">
+      <span class="source-label">Claude (best)</span>
+      <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- SITES SECTION -->
+<div class="section-header">
+  <span class="section-title">Препоръчани сайтове с prompt ресурси</span>
+  <div class="section-line"></div>
+</div>
+
+<div class="sites-section">
+  <div class="sites-grid">
+
+    <div class="site-card">
+      <div class="site-name">AIPRM <span class="free-badge">Безплатно</span></div>
+      <a href="https://aiprm.com/prompts/" class="site-url" target="_blank">aiprm.com/prompts</a>
+      <p class="site-note">4000+ prompts за ChatGPT. Има категории за SaaS, marketing, research. Изисква Chrome extension. Търси "niche" или "saas".</p>
+    </div>
+
+    <div class="site-card">
+      <div class="site-name">PromptBase <span class="paid-badge">Платено</span></div>
+      <a href="https://promptbase.com" class="site-url" target="_blank">promptbase.com</a>
+      <p class="site-note">Пазар за prompts. Има SaaS idea generators и validators. Цени $2-$10 на prompt. Прочети описанието преди да купуваш.</p>
+    </div>
+
+    <div class="site-card">
+      <div class="site-name">DocsBot AI <span class="free-badge">Безплатно</span></div>
+      <a href="https://docsbot.ai/prompts" class="site-url" target="_blank">docsbot.ai/prompts</a>
+      <p class="site-note">Безплатна библиотека от system prompts. Добра за намиране на niche и business analysis prompts.</p>
+    </div>
+
+    <div class="site-card">
+      <div class="site-name">Ash Explained <span class="free-badge">Безплатно</span></div>
+      <a href="https://ashexplained.com/chatgpt-prompt-profitable-niche-discovery/" class="site-url" target="_blank">ashexplained.com</a>
+      <p class="site-note">Детайлен mega-prompt за profitable niche discovery. Добре структуриран, с context и инструкции. Препоръчан.</p>
+    </div>
+
+    <div class="site-card">
+      <div class="site-name">XpertPrompt <span class="free-badge">Безплатно</span></div>
+      <a href="https://xpertprompt.com/2024/12/05/prompts-for-niche-research/" class="site-url" target="_blank">xpertprompt.com</a>
+      <p class="site-note">8 готови prompts за niche research. По-focused на freelance и content, но идеите са преносими за SaaS.</p>
+    </div>
+
+    <div class="site-card">
+      <div class="site-name">Prompt Warrior <span class="free-badge">Безплатно</span></div>
+      <a href="https://www.thepromptwarrior.com/p/3step-system-finding-niche" class="site-url" target="_blank">thepromptwarrior.com</a>
+      <p class="site-note">3-стъпков процес с Claude/ChatGPT за намиране на ниша. Има готов prompt с XML структура.</p>
+    </div>
+
+    <div class="site-card">
+      <div class="site-name">FlowGPT <span class="free-badge">Безплатно</span></div>
+      <a href="https://flowgpt.com" class="site-url" target="_blank">flowgpt.com</a>
+      <p class="site-note">Общност от prompt споделяне. Търси "business niche" или "SaaS idea". Качеството варира — четете рейтингите.</p>
+    </div>
+
+    <div class="site-card">
+      <div class="site-name">Snack Prompt <span class="free-badge">Безплатно</span></div>
+      <a href="https://snackprompt.com" class="site-url" target="_blank">snackprompt.com</a>
+      <p class="site-note">Чиста интерфейс, категоризирани prompts. По-малка библиотека но по-добро quality control. Бизнес секцията е полезна.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function copyPrompt(btn) {
+  const box = btn.closest('.card').querySelector('.prompt-box');
+  const text = box.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Копирано';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function filterCards(tag, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  document.querySelectorAll('.card').forEach((card, i) => {
+    const tags = card.dataset.tags || '';
+    const show = tag === 'all' || tags.includes(tag);
+    card.style.display = show ? 'flex' : 'none';
+    if (show) card.style.animationDelay = (i * 0.04) + 's';
+  });
+}
+</script>
+</body>
+</html>
